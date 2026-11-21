@@ -24,6 +24,9 @@ public class ChatService
     public event Action<Peer, string, string>? AppelEntrant; // peer, callId, typeAppel
     public event Action<Peer, string, bool>? AppelReponse;
     public event Action<Peer, string>? AppelTermine;
+    public event Action<Peer, string, byte[]>? AudioAppelRecu;
+    public event Action<Peer, string, byte[]>? VideoAppelRecu;
+    public event Action<Peer>? DiscussionSupprimee;
 
     public ChatService(ReseauService reseau, Parametres prm, Dispatcher ui)
     {
@@ -333,6 +336,18 @@ public class ChatService
             await reseau.EnvoyerAsync(p, pk);
     }
 
+    public async Task SupprimerGroupeOuDiscussionAsync(Peer p)
+    {
+        if (p.EstGroupe)
+        {
+            var pk = new Paquet { Type = "group_delete", GroupeId = p.Id, GroupeNom = p.Nom, De = prm.Pseudo };
+            await DiffuserPaquetAsync(p, pk);
+        }
+        reseau.Peers.Remove(p);
+        DiscussionSupprimee?.Invoke(p);
+        ListeChangee?.Invoke();
+    }
+
     // ---------- Appels ----------
     public string LancerAppel(Peer p, string typeAppel)
     {
@@ -346,6 +361,12 @@ public class ChatService
 
     public Task TerminerAppelAsync(Peer p, string callId) =>
         reseau.EnvoyerAsync(p, new Paquet { Type = "call_end", Id = callId, De = prm.Pseudo });
+
+    public Task EnvoyerAudioAppelAsync(Peer p, string callId, byte[] pcm) =>
+        reseau.EnvoyerAsync(p, new Paquet { Type = "call_audio", Id = callId, De = prm.Pseudo, Data = Convert.ToBase64String(pcm) });
+
+    public Task EnvoyerVideoAppelAsync(Peer p, string callId, byte[] jpeg) =>
+        reseau.EnvoyerAsync(p, new Paquet { Type = "call_video", Id = callId, De = prm.Pseudo, Data = Convert.ToBase64String(jpeg) });
 
     public void EnregistrerAppel(AppelInfo info)
     {
@@ -507,6 +528,16 @@ public class ChatService
                     if (existant != null) Statuts.Remove(existant);
                     break;
                 }
+            case "group_delete":
+                {
+                    var exist = reseau.Peers.FirstOrDefault(x => x.EstGroupe && x.Id == pk.GroupeId);
+                    if (exist != null)
+                    {
+                        reseau.Peers.Remove(exist);
+                        DiscussionSupprimee?.Invoke(exist);
+                    }
+                    break;
+                }
             case "call_offer":
                 AppelEntrant?.Invoke(p, pk.Id, string.IsNullOrEmpty(pk.TypeAppel) ? "Audio" : pk.TypeAppel);
                 break;
@@ -519,6 +550,14 @@ public class ChatService
             case "call_end":
                 AppelTermine?.Invoke(p, pk.Id);
                 break;
+            case "call_audio":
+                if (!string.IsNullOrEmpty(pk.Data))
+                    try { AudioAppelRecu?.Invoke(p, pk.Id, Convert.FromBase64String(pk.Data)); } catch { }
+                return;
+            case "call_video":
+                if (!string.IsNullOrEmpty(pk.Data))
+                    try { VideoAppelRecu?.Invoke(p, pk.Id, Convert.FromBase64String(pk.Data)); } catch { }
+                return;
         }
         ListeChangee?.Invoke();
     }

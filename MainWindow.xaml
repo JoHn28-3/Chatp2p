@@ -708,7 +708,8 @@
                     <TextBox x:Name="txtMessage" Grid.Column="2" Style="{StaticResource Champ}" Margin="4,10"
                              TextWrapping="Wrap" AcceptsReturn="True" MaxHeight="120" VerticalScrollBarVisibility="Auto"
                              PreviewKeyDown="TxtMessage_KeyDown" TextChanged="TxtMessage_TextChanged"/>
-                    <Button Grid.Column="3" Style="{StaticResource BtnIcone}" Content="🎤" FontSize="20"
+                    <Button Grid.Column="3" Style="{StaticResource BtnAction}" Content="🎤 Vocal" FontSize="12.5"
+                            Padding="10,7" Margin="2,2,4,2"
                             ToolTip="Enregistrer un message vocal" Click="BtnVocal_Click"/>
                     <Button Grid.Column="4" Style="{StaticResource BtnIcone}" Content="➤" FontSize="18" Foreground="White"
                             Background="{DynamicResource Accent}" ToolTip="Envoyer (Entrée)" Margin="2,2,10,2" Click="BtnEnvoyer_Click"/>
@@ -719,8 +720,13 @@
                             Foreground="#EF5350" Click="BtnAnnulerVocal_Click"/>
                     <Button DockPanel.Dock="Right" Style="{StaticResource BtnAction}" Content="✅ Envoyer le vocal"
                             Click="BtnEnvoyerVocal_Click"/>
-                    <TextBlock x:Name="lblRecTemps" Text="🔴 Enregistrement… 00:00" FontSize="15" FontWeight="SemiBold"
-                               Foreground="#EF5350" VerticalAlignment="Center" Margin="16,0"/>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0">
+                        <TextBlock x:Name="lblRecTemps" Text="🔴 Micro actif… 00:00" FontSize="14.5" FontWeight="SemiBold"
+                                   Foreground="#EF5350" VerticalAlignment="Center"/>
+                        <ProgressBar x:Name="pbNiveauRec" Minimum="0" Maximum="100" Height="6" Width="110"
+                                     Margin="12,0,0,0" Foreground="{DynamicResource Accent}" Background="#33808080"
+                                     VerticalAlignment="Center"/>
+                    </StackPanel>
                 </DockPanel>
             </Grid>
 
@@ -818,8 +824,10 @@
                                  Foreground="{DynamicResource Texte}" MouseDoubleClick="LstMediasPartages_Click" Margin="0,0,0,14"/>
 
                         <Button Style="{StaticResource BtnAction}" Content="📤 Exporter la discussion (.txt)" Margin="0,0,0,8" Click="BtnExporter_Click"/>
-                        <Button Content="🗑 Vider la discussion" Background="#E53935" Foreground="White" Padding="10,7" BorderThickness="0"
+                        <Button Content="🗑 Vider les messages" Background="#E53935" Foreground="White" Padding="10,7" BorderThickness="0"
                                 Cursor="Hand" Click="BtnViderChat_Click"/>
+                        <Button Content="❌ Supprimer le groupe / la discussion" Background="#B71C1C" Foreground="White" Padding="10,7"
+                                Margin="0,8,0,0" BorderThickness="0" Cursor="Hand" Click="BtnSupprimerChat_Click"/>
                     </StackPanel>
                 </ScrollViewer>
             </Grid>

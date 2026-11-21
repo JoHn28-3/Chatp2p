@@ -45,6 +45,8 @@ public partial class MainWindow : Window
     int secRec;
     AppelWindow? appelOuvert;
 
+    bool _recMicroOk = true;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -69,8 +71,9 @@ public partial class MainWindow : Window
         timerRec.Tick += (_, _) =>
         {
             secRec++;
-            lblRecTemps.Text = $"🔴 Enregistrement… {TimeSpan.FromSeconds(secRec):mm\\:ss}";
+            lblRecTemps.Text = (_recMicroOk ? "🔴 Micro actif… " : "🔴 Vocal… ") + TimeSpan.FromSeconds(secRec).ToString(@"mm\:ss");
         };
+        audio.NiveauMicroChange += n => Dispatcher.BeginInvoke(() => pbNiveauRec.Value = n);
 
         chat.ListeChangee += () => { vue.Refresh(); MajTitre(); MajMediasPartages(); PlanifierSauvegarde(); };
         chat.MessageAjoute += (p, m) => { if (p == selection) DefilerEnBas(); };
@@ -78,6 +81,9 @@ public partial class MainWindow : Window
         chat.AppelEntrant += SurAppelEntrant;
         chat.AppelReponse += (_, id, ok) => { if (appelOuvert?.CallId == id) appelOuvert.SurReponseDistante(ok); };
         chat.AppelTermine += (_, id) => { if (appelOuvert?.CallId == id) appelOuvert.SurFinDistante(); };
+        chat.AudioAppelRecu += (_, id, pcm) => { if (appelOuvert?.CallId == id) appelOuvert.SurAudioRecu(pcm); };
+        chat.VideoAppelRecu += (_, id, jpeg) => { if (appelOuvert?.CallId == id) appelOuvert.SurVideoRecu(jpeg); };
+        chat.DiscussionSupprimee += p => { if (p == selection) Selectionner(null); };
 
         reseau.PeerConnecte += p => { if (selection == null) Selectionner(p); vue.Refresh(); };
 
@@ -586,6 +592,7 @@ public partial class MainWindow : Window
             if (d.ShowDialog() == true) await EnvoyerFichiersAsync(d.FileNames);
         });
         Add("📊 Créer un sondage", CreerSondage);
+        Add("🎤 Enregistrer un message vocal", () => BtnVocal_Click(sender, e));
         Add("📷 Capture d'écran", CapturerEcranAsync);
         menu.IsOpen = true;
     }
@@ -647,10 +654,11 @@ public partial class MainWindow : Window
     {
         if (!ChatService.PeutEnvoyer(selection, out var err)) { MessageBox.Show(err); return; }
         secRec = 0;
-        lblRecTemps.Text = "🔴 Enregistrement… 00:00";
+        pbNiveauRec.Value = 0;
+        _recMicroOk = audio.DemarrerEnregistrement();
+        lblRecTemps.Text = _recMicroOk ? "🔴 Micro actif… 00:00" : "🔴 Vocal… 00:00";
         pnlSaisie.Visibility = Visibility.Collapsed;
         pnlEnregistrement.Visibility = Visibility.Visible;
-        audio.DemarrerEnregistrement();
         timerRec.Start();
     }
 
@@ -849,11 +857,23 @@ public partial class MainWindow : Window
         Ajout("Exporter la discussion…", () => Exporter(p));
         menu.Items.Add(new Separator());
         Ajout("Vider la discussion", () => ViderChat(p));
+        Ajout(p.EstGroupe ? "❌ Supprimer le groupe" : "❌ Supprimer la discussion", () => _ = SupprimerDiscussion(p));
         menu.IsOpen = true;
     }
 
     void BtnExporter_Click(object s, RoutedEventArgs e) { if (selection != null) Exporter(selection); }
     void BtnViderChat_Click(object s, RoutedEventArgs e) { if (selection != null) ViderChat(selection); }
+    void BtnSupprimerChat_Click(object s, RoutedEventArgs e) { if (selection != null) _ = SupprimerDiscussion(selection); }
+
+    async Task SupprimerDiscussion(Peer p)
+    {
+        var quoi = p.EstGroupe ? $"le groupe « {p.Nom} »" : $"la discussion avec {p.Nom}";
+        if (prm.ConfirmSuppr && MessageBox.Show($"Supprimer {quoi} ?", "Supprimer", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        if (p == selection) Selectionner(null);
+        await chat.SupprimerGroupeOuDiscussionAsync(p);
+        MajTitre();
+        PlanifierSauvegarde();
+    }
 
     void ViderChat(Peer p)
     {
@@ -1005,12 +1025,7 @@ public partial class MainWindow : Window
 
     void ChatSuppr_Click(object s, RoutedEventArgs e)
     {
-        if ((s as FrameworkElement)?.DataContext is not Peer p) return;
-        if (prm.ConfirmSuppr && MessageBox.Show($"Supprimer la discussion avec {p.Nom} ?", "Supprimer", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-        if (p == selection) Selectionner(null);
-        reseau.Peers.Remove(p);
-        MajTitre();
-        PlanifierSauvegarde();
+        if ((s as FrameworkElement)?.DataContext is Peer p) _ = SupprimerDiscussion(p);
     }
 
     void TxtRecherche_TextChanged(object s, TextChangedEventArgs e) => vue?.Refresh();
