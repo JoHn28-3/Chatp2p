@@ -1,23 +1,117 @@
 ﻿<Window x:Class="Chatp2pWPF.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ChatP2P" Height="680" Width="1050"
+        Title="ChatP2P" Height="700" Width="1100" MinHeight="450" MinWidth="800"
+        AllowDrop="True" Drop="Fenetre_Drop"
         Background="{DynamicResource FondApp}">
     <Window.Resources>
         <SolidColorBrush x:Key="FondApp" Color="#EFEAE2"/>
         <SolidColorBrush x:Key="FondPanneau" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="FondEntete" Color="#F0F2F5"/>
+        <SolidColorBrush x:Key="FondSaisie" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="BulleRecue" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="BulleEnvoyee" Color="#D9FDD3"/>
         <SolidColorBrush x:Key="Texte" Color="#111B21"/>
         <SolidColorBrush x:Key="Gris" Color="#667781"/>
+        <SolidColorBrush x:Key="Accent" Color="#00A884"/>
         <BooleanToVisibilityConverter x:Key="BoolVis"/>
+
+        <!-- Bouton rond sans bordure (icônes) -->
+        <Style x:Key="BtnIcone" TargetType="Button">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource Gris}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border Background="{TemplateBinding Background}" CornerRadius="20"/>
+                            <Border x:Name="survol" Background="#22808080" CornerRadius="20" Opacity="0"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="survol" Property="Opacity" Value="1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Champ de saisie arrondi -->
+        <Style x:Key="Champ" TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource FondSaisie}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Texte}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource Texte}"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="18"
+                                Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Pastille de filtre -->
+        <Style x:Key="Chip" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="{DynamicResource Gris}"/>
+            <Setter Property="Margin" Value="10,0,0,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="bd" Background="{DynamicResource FondEntete}" CornerRadius="16" Padding="14,5">
+                            <ContentPresenter HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource Accent}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Ligne de discussion -->
+        <Style x:Key="LigneChat" TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="bd" Background="Transparent" Padding="10,4">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#14808080"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource FondEntete}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
         <Style x:Key="Bulle" TargetType="Border">
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="10,6"/>
-            <Setter Property="Margin" Value="10,3"/>
-            <Setter Property="MaxWidth" Value="420"/>
+            <Setter Property="Margin" Value="14,3"/>
+            <Setter Property="MaxWidth" Value="460"/>
             <Setter Property="Background" Value="{DynamicResource BulleRecue}"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
             <Style.Triggers>
@@ -48,7 +142,7 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="330"/>
+            <ColumnDefinition Width="350"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -58,48 +152,56 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <DockPanel Background="{DynamicResource FondEntete}" Height="56">
-                    <Button DockPanel.Dock="Right" Content="⚙" FontSize="18" Width="44" ToolTip="Réglages"
-                  Background="Transparent" BorderThickness="0"
-                  Foreground="{DynamicResource Texte}" Click="BtnReglages_Click"/>
-                    <Button DockPanel.Dock="Right" Content="🗄" FontSize="18" Width="44" ToolTip="Archivées"
-                  Background="Transparent" BorderThickness="0"
-                  Foreground="{DynamicResource Texte}" Click="BtnArchives_Click"/>
-                    <TextBlock x:Name="lblTitre" Text="Discussions" FontSize="18" FontWeight="Bold"
-                     Foreground="{DynamicResource Texte}" VerticalAlignment="Center" Margin="16,0"/>
+                <DockPanel Height="60">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource BtnIcone}" Content="⚙" ToolTip="Réglages" Click="BtnReglages_Click"/>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource BtnIcone}" Content="🗄" ToolTip="Discussions archivées" Click="BtnArchives_Click"/>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource BtnIcone}" Content="★" ToolTip="Messages importants" Click="BtnImportants_Click"/>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource BtnIcone}" Content="＋" FontSize="22" ToolTip="Nouvelle discussion (connexion par IP)" Click="BtnNouveau_Click"/>
+                    <TextBlock x:Name="lblTitre" Text="Discussions" FontSize="20" FontWeight="Bold"
+                               Foreground="{DynamicResource Texte}" VerticalAlignment="Center" Margin="16,0"/>
                 </DockPanel>
 
-                <TextBox x:Name="txtRecherche" Grid.Row="1" Margin="10" Padding="8" FontSize="14"
-                 Background="{DynamicResource FondEntete}" Foreground="{DynamicResource Texte}"
-                 CaretBrush="{DynamicResource Texte}" ToolTip="Rechercher une discussion"
-                 TextChanged="TxtRecherche_TextChanged"/>
+                <Grid Grid.Row="1" Margin="10,0,10,8">
+                    <TextBox x:Name="txtRecherche" Style="{StaticResource Champ}"
+                             Background="{DynamicResource FondEntete}" TextChanged="TxtRecherche_TextChanged"/>
+                    <TextBlock Text="🔍  Rechercher une discussion" Foreground="{DynamicResource Gris}"
+                               IsHitTestVisible="False" VerticalAlignment="Center" Margin="14,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=txtRecherche}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
 
-                <ListBox x:Name="lstChats" Grid.Row="2" BorderThickness="0"
-                 Background="{DynamicResource FondPanneau}"
-                 SelectionChanged="LstChats_SelectionChanged">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
+                <StackPanel Grid.Row="2" Orientation="Horizontal">
+                    <ToggleButton x:Name="chipNonLus" Style="{StaticResource Chip}" Content="Non lues"
+                                  Checked="Chip_Changed" Unchecked="Chip_Changed"/>
+                </StackPanel>
+
+                <ListBox x:Name="lstChats" Grid.Row="3" BorderThickness="0" Background="{DynamicResource FondPanneau}"
+                         ItemContainerStyle="{StaticResource LigneChat}"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         SelectionChanged="LstChats_SelectionChanged">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid Margin="4,6" Background="Transparent">
+                            <Grid Margin="0,4" Background="Transparent">
                                 <Grid.ContextMenu>
                                     <ContextMenu>
-                                        <MenuItem Header="Épingler" IsCheckable="True"
-                              IsChecked="{Binding Epingle, Mode=TwoWay}" Click="ChatMenu_Click"/>
-                                        <MenuItem Header="Mettre en sourdine" IsCheckable="True"
-                              IsChecked="{Binding Muet, Mode=TwoWay}" Click="ChatMenu_Click"/>
-                                        <MenuItem Header="Archiver" IsCheckable="True"
-                              IsChecked="{Binding Archive, Mode=TwoWay}" Click="ChatMenu_Click"/>
-                                        <MenuItem Header="Messages éphémères (1 min)" IsCheckable="True"
-                              IsChecked="{Binding Ephemere, Mode=TwoWay}" Click="ChatMenu_Click"/>
-                                        <MenuItem Header="Bloquer" IsCheckable="True"
-                              IsChecked="{Binding Bloque, Mode=TwoWay}" Click="ChatMenu_Click"/>
+                                        <MenuItem Header="Épingler" IsCheckable="True" IsChecked="{Binding Epingle, Mode=TwoWay}" Click="ChatMenu_Click"/>
+                                        <MenuItem Header="Mettre en sourdine" IsCheckable="True" IsChecked="{Binding Muet, Mode=TwoWay}" Click="ChatMenu_Click"/>
+                                        <MenuItem Header="Archiver" IsCheckable="True" IsChecked="{Binding Archive, Mode=TwoWay}" Click="ChatMenu_Click"/>
+                                        <MenuItem Header="Messages éphémères (1 min)" IsCheckable="True" IsChecked="{Binding Ephemere, Mode=TwoWay}" Click="ChatMenu_Click"/>
+                                        <MenuItem Header="Bloquer" IsCheckable="True" IsChecked="{Binding Bloque, Mode=TwoWay}" Click="ChatMenu_Click"/>
                                         <Separator/>
                                         <MenuItem Header="Supprimer la discussion" Click="ChatSuppr_Click"/>
                                     </ContextMenu>
@@ -109,25 +211,41 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <Grid Width="46" Height="46">
-                                    <Ellipse Fill="#25D366"/>
+                                <Grid Width="48" Height="48">
+                                    <Ellipse Fill="{Binding Couleur}"/>
                                     <TextBlock Text="{Binding Initiale}" Foreground="White" FontSize="20"
-                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Ellipse Width="12" Height="12" Fill="#25D366" Stroke="{DynamicResource FondPanneau}" StrokeThickness="2"
+                                             HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                             Visibility="{Binding EnLigne, Converter={StaticResource BoolVis}}"/>
                                 </Grid>
                                 <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Nom}" FontWeight="SemiBold" FontSize="15"
-                               Foreground="{DynamicResource Texte}"/>
+                                        <TextBlock Text="{Binding Nom}" FontWeight="SemiBold" FontSize="15" Foreground="{DynamicResource Texte}"/>
                                         <TextBlock Text="{Binding Icones}" Margin="6,0,0,0"/>
                                     </StackPanel>
-                                    <TextBlock Text="{Binding Apercu}" Foreground="{DynamicResource Gris}"
-                             MaxWidth="190" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Apercu}" Foreground="{DynamicResource Gris}" Margin="0,2,0,0"
+                                               TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
-                                <Border Grid.Column="2" Background="#25D366" CornerRadius="10" Padding="7,1"
-                        VerticalAlignment="Center"
-                        Visibility="{Binding HasNonLus, Converter={StaticResource BoolVis}}">
-                                    <TextBlock Text="{Binding NonLusTexte}" Foreground="White" FontSize="12"/>
-                                </Border>
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                    <TextBlock Text="{Binding HeureDerniere}" FontSize="11" HorizontalAlignment="Right">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{DynamicResource Gris}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasNonLus}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <Border Background="{DynamicResource Accent}" CornerRadius="10" Padding="7,1" Margin="0,4,0,0"
+                                            HorizontalAlignment="Right"
+                                            Visibility="{Binding HasNonLus, Converter={StaticResource BoolVis}}">
+                                        <TextBlock Text="{Binding NonLusTexte}" Foreground="White" FontSize="12"/>
+                                    </Border>
+                                </StackPanel>
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -139,112 +257,130 @@
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <DockPanel x:Name="entete" Background="{DynamicResource FondEntete}" Height="56">
-                <Button DockPanel.Dock="Right" x:Name="btnConnecter" Content="Connecter"
-                Margin="8" Padding="12,0" Click="BtnConnecter_Click"/>
-                <TextBox DockPanel.Dock="Right" x:Name="txtIP" Text="127.0.0.1" Width="120"
-                 Margin="0,12" VerticalContentAlignment="Center"
-                 Background="{DynamicResource FondPanneau}" Foreground="{DynamicResource Texte}"/>
-                <Grid DockPanel.Dock="Left" Width="40" Height="40" Margin="12,0,0,0">
-                    <Ellipse Fill="#25D366"/>
+            <DockPanel x:Name="entete" Background="{DynamicResource FondEntete}" Height="60">
+                <Button DockPanel.Dock="Right" Style="{StaticResource BtnIcone}" Content="⋮" FontSize="22" ToolTip="Menu" Click="BtnMenuChat_Click"/>
+                <Button DockPanel.Dock="Right" Style="{StaticResource BtnIcone}" Content="🔍" ToolTip="Rechercher dans la discussion (Ctrl+F)" Click="BtnRechChat_Click"/>
+                <Grid DockPanel.Dock="Left" Width="42" Height="42" Margin="14,0,0,0">
+                    <Ellipse Fill="{Binding Couleur}"/>
                     <TextBlock Text="{Binding Initiale}" Foreground="White" FontSize="18"
-                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Grid>
-                <StackPanel Margin="10,0" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Nom, FallbackValue='Aucun contact'}" FontWeight="Bold"
-                     FontSize="16" Foreground="{DynamicResource Texte}"/>
+                <StackPanel Margin="12,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Nom, FallbackValue='Aucun contact'}" FontWeight="Bold" FontSize="16"
+                               Foreground="{DynamicResource Texte}"/>
                     <TextBlock Text="{Binding StatutTexte}" FontSize="12" Foreground="{DynamicResource Gris}"/>
                 </StackPanel>
             </DockPanel>
 
-            <ScrollViewer x:Name="scroll" Grid.Row="1" VerticalScrollBarVisibility="Auto"
-                    Background="{DynamicResource FondApp}">
-                <ItemsControl x:Name="icMessages">
+            <Border x:Name="barreRech" Grid.Row="1" Background="{DynamicResource FondPanneau}" Padding="10,6" Visibility="Collapsed">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource BtnIcone}" Content="✖" Width="32" Height="32" FontSize="14" Click="BtnFermerRech_Click"/>
+                    <TextBox x:Name="txtRechChat" Style="{StaticResource Champ}" Background="{DynamicResource FondEntete}"
+                             TextChanged="TxtRechChat_TextChanged"/>
+                </DockPanel>
+            </Border>
+
+            <ScrollViewer x:Name="scroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" Background="{DynamicResource FondApp}">
+                <ItemsControl x:Name="icMessages" Margin="0,8">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Style="{StaticResource Bulle}" MouseLeftButtonDown="Bulle_Down">
-                                <Border.ContextMenu>
-                                    <ContextMenu>
-                                        <MenuItem Header="Répondre" Click="MenuRepondre_Click"/>
-                                        <MenuItem Header="Copier" Click="MenuCopier_Click"/>
-                                        <MenuItem Header="Modifier" Click="MenuModifier_Click"
-                              Style="{StaticResource MoiSeul}"/>
-                                        <MenuItem Header="Réagir">
-                                            <MenuItem Header="👍" Click="MenuReagir_Click"/>
-                                            <MenuItem Header="❤️" Click="MenuReagir_Click"/>
-                                            <MenuItem Header="😂" Click="MenuReagir_Click"/>
-                                            <MenuItem Header="😮" Click="MenuReagir_Click"/>
-                                            <MenuItem Header="😢" Click="MenuReagir_Click"/>
-                                            <MenuItem Header="🙏" Click="MenuReagir_Click"/>
-                                        </MenuItem>
-                                        <MenuItem Header="Message important ★" Click="MenuEtoile_Click"/>
-                                        <Separator/>
-                                        <MenuItem Header="Supprimer pour moi" Click="MenuSupprMoi_Click"/>
-                                        <MenuItem Header="Supprimer pour tous" Click="MenuSupprTous_Click"
-                              Style="{StaticResource MoiSeul}"/>
-                                    </ContextMenu>
-                                </Border.ContextMenu>
-                                <StackPanel>
-                                    <Border Background="#22808080" CornerRadius="6" Padding="6,3" Margin="0,0,0,4"
-                          Visibility="{Binding HasReponse, Converter={StaticResource BoolVis}}">
-                                        <TextBlock Text="{Binding Reponse}" Foreground="{DynamicResource Gris}"
-                               TextTrimming="CharacterEllipsis" MaxWidth="360"/>
-                                    </Border>
-                                    <Image Source="{Binding Image}" MaxWidth="300" MaxHeight="300" Stretch="Uniform"
-                         Margin="0,0,0,4"
-                         Visibility="{Binding HasImage, Converter={StaticResource BoolVis}}"/>
-                                    <TextBlock Text="{Binding NomFichier, StringFormat='📎 {0}'}"
-                             Foreground="{DynamicResource Texte}" FontWeight="SemiBold"
-                             Visibility="{Binding HasFichier, Converter={StaticResource BoolVis}}"/>
-                                    <TextBlock Text="{Binding Texte}" TextWrapping="Wrap" FontSize="14"
-                             Foreground="{DynamicResource Texte}"/>
-                                    <TextBlock Text="{Binding Reaction}" FontSize="16" HorizontalAlignment="Left"
-                             Visibility="{Binding HasReaction, Converter={StaticResource BoolVis}}"/>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <TextBlock Text="{Binding Pied}" FontSize="10"
-                               Foreground="{DynamicResource Gris}"/>
-                                        <TextBlock Text="{Binding Statut}" FontSize="11" Margin="4,0,0,0"
-                               Style="{StaticResource Coches}"/>
+                            <StackPanel>
+                                <Border HorizontalAlignment="Center" Background="{DynamicResource FondEntete}" CornerRadius="8"
+                                        Padding="12,4" Margin="0,10,0,6"
+                                        Visibility="{Binding AfficherJour, Converter={StaticResource BoolVis}}">
+                                    <TextBlock Text="{Binding Jour}" FontSize="12" Foreground="{DynamicResource Gris}"/>
+                                </Border>
+                                <Border Style="{StaticResource Bulle}" MouseLeftButtonDown="Bulle_Down">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Répondre" Click="MenuRepondre_Click"/>
+                                            <MenuItem Header="Copier" Click="MenuCopier_Click"/>
+                                            <MenuItem Header="Transférer…" Click="MenuTransferer_Click"/>
+                                            <MenuItem Header="Modifier" Click="MenuModifier_Click" Style="{StaticResource MoiSeul}"/>
+                                            <MenuItem Header="Réagir">
+                                                <MenuItem Header="👍" Click="MenuReagir_Click"/>
+                                                <MenuItem Header="❤️" Click="MenuReagir_Click"/>
+                                                <MenuItem Header="😂" Click="MenuReagir_Click"/>
+                                                <MenuItem Header="😮" Click="MenuReagir_Click"/>
+                                                <MenuItem Header="😢" Click="MenuReagir_Click"/>
+                                                <MenuItem Header="🙏" Click="MenuReagir_Click"/>
+                                            </MenuItem>
+                                            <MenuItem Header="Message important ★" Click="MenuEtoile_Click"/>
+                                            <MenuItem Header="Infos" Click="MenuInfos_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="Supprimer pour moi" Click="MenuSupprMoi_Click"/>
+                                            <MenuItem Header="Supprimer pour tous" Click="MenuSupprTous_Click" Style="{StaticResource MoiSeul}"/>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+                                    <StackPanel>
+                                        <TextBlock Text="↪ Transféré" FontSize="11" FontStyle="Italic" Foreground="{DynamicResource Gris}"
+                                                   Visibility="{Binding Transfere, Converter={StaticResource BoolVis}}"/>
+                                        <Border Background="#22808080" CornerRadius="6" Padding="6,3" Margin="0,0,0,4"
+                                                BorderBrush="{DynamicResource Accent}" BorderThickness="3,0,0,0"
+                                                Visibility="{Binding HasReponse, Converter={StaticResource BoolVis}}">
+                                            <TextBlock Text="{Binding Reponse}" Foreground="{DynamicResource Gris}"
+                                                       TextTrimming="CharacterEllipsis" MaxWidth="360"/>
+                                        </Border>
+                                        <Image Source="{Binding Image}" MaxWidth="300" MaxHeight="300" Stretch="Uniform" Margin="0,0,0,4"
+                                               Visibility="{Binding HasImage, Converter={StaticResource BoolVis}}"/>
+                                        <TextBlock Text="{Binding NomFichier, StringFormat='📎 {0}'}" Foreground="{DynamicResource Texte}"
+                                                   FontWeight="SemiBold" Visibility="{Binding HasFichier, Converter={StaticResource BoolVis}}"/>
+                                        <TextBlock Text="{Binding Texte}" TextWrapping="Wrap" FontSize="14" Foreground="{DynamicResource Texte}"/>
+                                        <TextBlock Text="{Binding Reaction}" FontSize="16" HorizontalAlignment="Left"
+                                                   Visibility="{Binding HasReaction, Converter={StaticResource BoolVis}}"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <TextBlock Text="{Binding Pied}" FontSize="10" Foreground="{DynamicResource Gris}"/>
+                                            <TextBlock Text="{Binding Statut}" FontSize="11" Margin="4,0,0,0" Style="{StaticResource Coches}"/>
+                                        </StackPanel>
                                     </StackPanel>
-                                </StackPanel>
-                            </Border>
+                                </Border>
+                            </StackPanel>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </ScrollViewer>
 
-            <Border x:Name="bandeau" Grid.Row="2" Background="{DynamicResource FondEntete}"
-              Padding="12,6" Visibility="Collapsed">
+            <Border x:Name="bandeau" Grid.Row="3" Background="{DynamicResource FondEntete}" Padding="12,6" Visibility="Collapsed">
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Content="✖" Background="Transparent" BorderThickness="0"
-                  Foreground="{DynamicResource Texte}" Click="BtnAnnulerContexte_Click"/>
-                    <TextBlock x:Name="txtBandeau" Foreground="{DynamicResource Gris}"
-                     TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource BtnIcone}" Content="✖" Width="30" Height="30" FontSize="13" Click="BtnAnnulerContexte_Click"/>
+                    <TextBlock x:Name="txtBandeau" Foreground="{DynamicResource Gris}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                 </DockPanel>
             </Border>
 
-            <Grid Grid.Row="3" Background="{DynamicResource FondEntete}">
+            <Grid Grid.Row="4" Background="{DynamicResource FondEntete}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Button Content="😊" FontSize="20" Width="44" Background="Transparent"
-                BorderThickness="0" Click="BtnEmoji_Click"/>
-                <Button Grid.Column="1" Content="📎" FontSize="20" Width="44" Background="Transparent"
-                BorderThickness="0" Click="BtnFichier_Click"/>
-                <TextBox x:Name="txtMessage" Grid.Column="2" Margin="4,10" Padding="8" FontSize="14"
-                 Background="{DynamicResource FondPanneau}" Foreground="{DynamicResource Texte}"
-                 CaretBrush="{DynamicResource Texte}"
-                 KeyDown="TxtMessage_KeyDown" TextChanged="TxtMessage_TextChanged"/>
-                <Button Grid.Column="3" Content="➤" FontSize="20" Width="44" Background="Transparent"
-                BorderThickness="0" Foreground="#25D366" Click="BtnEnvoyer_Click"/>
+                <Button Style="{StaticResource BtnIcone}" Content="😊" FontSize="20" ToolTip="Emojis" Margin="8,2,2,2" Click="BtnEmoji_Click"/>
+                <Button Grid.Column="1" Style="{StaticResource BtnIcone}" Content="📎" FontSize="20" ToolTip="Joindre des fichiers (ou glisser-déposer / Ctrl+V pour une image)" Click="BtnFichier_Click"/>
+                <TextBox x:Name="txtMessage" Grid.Column="2" Style="{StaticResource Champ}" Margin="4,10"
+                         TextWrapping="Wrap" AcceptsReturn="True" MaxHeight="120" VerticalScrollBarVisibility="Auto"
+                         PreviewKeyDown="TxtMessage_KeyDown" TextChanged="TxtMessage_TextChanged"/>
+                <Button Grid.Column="3" Style="{StaticResource BtnIcone}" Content="➤" FontSize="18" Foreground="White"
+                        Background="{DynamicResource Accent}" ToolTip="Envoyer (Entrée)" Margin="4,2,10,2" Click="BtnEnvoyer_Click"/>
+            </Grid>
+
+            <!-- Écran d'accueil -->
+            <Grid x:Name="accueil" Grid.RowSpan="5" Background="{DynamicResource FondEntete}">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="💬" FontSize="72" HorizontalAlignment="Center"/>
+                    <TextBlock Text="ChatP2P pour Windows" FontSize="28" FontWeight="Light" Foreground="{DynamicResource Texte}"
+                               HorizontalAlignment="Center" Margin="0,12,0,8"/>
+                    <TextBlock Text="Messagerie directe entre PC, sans serveur." Foreground="{DynamicResource Gris}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Cliquez sur ＋ pour vous connecter à l'adresse IP d'un contact." Foreground="{DynamicResource Gris}"
+                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <TextBlock Text="🔒 Données stockées uniquement sur votre ordinateur" FontSize="12" Foreground="{DynamicResource Gris}"
+                               HorizontalAlignment="Center" Margin="0,30,0,0"/>
+                </StackPanel>
             </Grid>
         </Grid>
     </Grid>

@@ -35,7 +35,7 @@ public class ChatService
     }
 
     // ---------- Actions de l'utilisateur ----------
-    public Task EnvoyerTexteAsync(Peer p, string texte, ChatMessage? reponseA)
+    public Task EnvoyerTexteAsync(Peer p, string texte, ChatMessage? reponseA, bool transfere = false)
     {
         var m = new ChatMessage
         {
@@ -43,14 +43,15 @@ public class ChatService
             EstMoi = true,
             Statut = "✓",
             Heure = DateTime.Now.ToString("HH:mm"),
-            Reponse = reponseA?.Texte ?? ""
+            Reponse = reponseA?.Texte ?? "",
+            Transfere = transfere
         };
         Ajouter(p, m, "Vous : " + texte);
         return reseau.EnvoyerAsync(p, new Paquet
-        { Type = "msg", Id = m.Id, De = prm.Pseudo, Texte = texte, Reponse = m.Reponse });
+        { Type = "msg", Id = m.Id, De = prm.Pseudo, Texte = texte, Reponse = m.Reponse, Transfere = transfere });
     }
 
-    public async Task EnvoyerFichierAsync(Peer p, string chemin)
+    public async Task EnvoyerFichierAsync(Peer p, string chemin, bool transfere = false)
     {
         var nom = new FileInfo(chemin).Name;
         var data = await FichierService.EncoderAsync(chemin);
@@ -60,12 +61,13 @@ public class ChatService
             Statut = "✓",
             Heure = DateTime.Now.ToString("HH:mm"),
             NomFichier = nom,
-            Fichier = chemin
+            Fichier = chemin,
+            Transfere = transfere
         };
         FichierService.ChargerImage(m);
         Ajouter(p, m, "Vous : 📎 " + nom);
         await reseau.EnvoyerAsync(p, new Paquet
-        { Type = "file", Id = m.Id, De = prm.Pseudo, NomFichier = nom, Data = data });
+        { Type = "file", Id = m.Id, De = prm.Pseudo, NomFichier = nom, Data = data, Transfere = transfere });
     }
 
     public Task ModifierAsync(Peer p, ChatMessage m, string texte)
@@ -95,6 +97,13 @@ public class ChatService
         _ = reseau.EnvoyerAsync(p, new Paquet { Type = "typing", De = prm.Pseudo });
     }
 
+    public void Vider(Peer p)
+    {
+        p.Messages.Clear();
+        p.Apercu = "";
+        ListeChangee?.Invoke();
+    }
+
     public void EnvoyerLus(Peer p)
     {
         foreach (var m in p.Messages.Where(x => !x.EstMoi && x.AttenteLecture).ToList())
@@ -122,6 +131,8 @@ public class ChatService
                         Texte = pk.Texte,
                         Reponse = pk.Reponse,
                         Heure = pk.Date.ToString("HH:mm"),
+                        Date = pk.Date,
+                        Transfere = pk.Transfere,
                         AttenteLecture = true
                     };
                     if (pk.Type == "file") FichierService.Recevoir(m, pk);
@@ -168,6 +179,8 @@ public class ChatService
     // ---------- Utilitaires ----------
     void Ajouter(Peer p, ChatMessage m, string apercu)
     {
+        var prec = p.Messages.LastOrDefault();
+        m.AfficherJour = prec == null || prec.Date.Date != m.Date.Date;
         p.Messages.Add(m);
         p.Apercu = apercu;
         p.Derniere = DateTime.Now;

@@ -45,7 +45,8 @@ public class ReseauService
     public async Task ConnecterAsync(string ip)
     {
         var client = new TcpClient();
-        await client.ConnectAsync(ip, Port);
+        using var delai = new CancellationTokenSource(4000);
+        await client.ConnectAsync(ip, Port, delai.Token);
         _ = GererConnexion(client);
     }
 
@@ -68,8 +69,11 @@ public class ReseauService
     async Task GererConnexion(TcpClient client)
     {
         Peer? peer = null;
+        string ipDistante = "";
         try
         {
+            if (client.Client.RemoteEndPoint is IPEndPoint ep)
+                ipDistante = (ep.Address.IsIPv4MappedToIPv6 ? ep.Address.MapToIPv4() : ep.Address).ToString();
             var flux = client.GetStream();
             var lecteur = new StreamReader(flux);
             var ecrivain = new StreamWriter(flux) { AutoFlush = true };
@@ -87,6 +91,7 @@ public class ReseauService
                     {
                         var np = ObtenirPeer(pk.De);
                         np.Writer = ecrivain;
+                        if (ipDistante != "") np.Ip = ipDistante;
                         np.EnLigne = true;
                         peer = np;
                         PeerConnecte?.Invoke(np);

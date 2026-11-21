@@ -7,4 +7,5 @@ public class Parametres
     public bool NotifSon { get; set; } = true;
     public bool AccusesLecture { get; set; } = true;
     public bool IndicateurSaisie { get; set; } = true;
+    public string Fond { get; set; } = "";
 }

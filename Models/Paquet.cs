@@ -10,5 +10,6 @@ public class Paquet
     public string Reaction { get; set; } = "";
     public string NomFichier { get; set; } = "";
     public string Data { get; set; } = "";
+    public bool Transfere { get; set; }
     public DateTime Date { get; set; } = DateTime.Now;
 }
