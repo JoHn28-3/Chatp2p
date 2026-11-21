@@ -50,6 +50,7 @@ public class AppelWindow : Window
         Title = $"Appel {_typeAppel} — {peer.Nom}";
         Width = 460;
         Height = 620;
+        try { Icon = new BitmapImage(new Uri("pack://application:,,,/app.ico")); } catch { }
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ResizeMode = ResizeMode.NoResize;
         Background = (Brush)new BrushConverter().ConvertFromString("#0B141A")!;

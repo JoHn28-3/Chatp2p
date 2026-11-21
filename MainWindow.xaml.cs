@@ -198,9 +198,16 @@ public partial class MainWindow : Window
     }
 
     // ---------- Utilitaires dialogues ----------
+    static ImageSource? IconeApp()
+    {
+        try { return new BitmapImage(new Uri("pack://application:,,,/app.ico")); }
+        catch { return null; }
+    }
+
     Window Fenetre(string titre, double largeur, UIElement contenu) => new()
     {
         Title = titre, Width = largeur, SizeToContent = SizeToContent.Height,
+        Icon = IconeApp(),
         Owner = this, WindowStartupLocation = WindowStartupLocation.CenterOwner, ResizeMode = ResizeMode.NoResize,
         Background = (Brush)Resources["FondPanneau"], Foreground = (Brush)Resources["Texte"], Content = contenu
     };
