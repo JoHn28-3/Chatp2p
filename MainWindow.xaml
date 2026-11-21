@@ -364,6 +364,8 @@
                                     <TextBlock Text="{Binding DateTexte}" FontSize="11" Foreground="{DynamicResource Gris}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                     <Button Style="{StaticResource BtnIcone}" Content="📞" Width="32" Height="32" FontSize="14"
                                             ToolTip="Rappeler en audio" Click="BtnRappelerAudio_Click"/>
+                                    <Button Style="{StaticResource BtnIcone}" Content="🗑" Width="32" Height="32" FontSize="14"
+                                            Foreground="#EF5350" ToolTip="Supprimer de l'historique" Click="BtnSupprimerAppel_Click"/>
                                 </StackPanel>
                             </Grid>
                         </DataTemplate>
@@ -383,10 +385,17 @@
                              SelectionChanged="LstStatuts_SelectionChanged">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Grid Margin="2,6">
+                                <Grid Margin="2,6" Background="Transparent">
+                                    <Grid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="👁 Afficher le statut" Click="MenuVoirStatut_Click"/>
+                                            <MenuItem Header="🗑 Supprimer ce statut" Click="BtnSupprimerStatut_Click"/>
+                                        </ContextMenu>
+                                    </Grid.ContextMenu>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <Border Width="48" Height="48" CornerRadius="24" BorderBrush="{DynamicResource Accent}" BorderThickness="2" Padding="2">
                                         <Grid>
@@ -400,11 +409,13 @@
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Grid>
                                     </Border>
-                                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <StackPanel Grid.Column="1" Margin="12,0,6,0" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Auteur}" FontWeight="SemiBold" FontSize="15" Foreground="{DynamicResource Texte}"/>
                                         <TextBlock Text="{Binding HeureTexte}" FontSize="12" Foreground="{DynamicResource Gris}"/>
                                         <TextBlock Text="{Binding Texte}" FontSize="12" Foreground="{DynamicResource Gris}" TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource BtnIcone}" Content="🗑" Width="32" Height="32" FontSize="14"
+                                            Foreground="#EF5350" ToolTip="Supprimer ce statut" Click="BtnSupprimerStatut_Click"/>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>

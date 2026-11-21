@@ -325,6 +325,14 @@ public class ChatService
             await reseau.EnvoyerAsync(p, pk);
     }
 
+    public async Task SupprimerStatutAsync(StatutStory st)
+    {
+        if (Statuts.Remove(st)) ListeChangee?.Invoke();
+        var pk = new Paquet { Type = "story_delete", Id = st.Id, De = prm.Pseudo };
+        foreach (var p in reseau.Peers.Where(x => !x.EstGroupe && x.EnLigne))
+            await reseau.EnvoyerAsync(p, pk);
+    }
+
     // ---------- Appels ----------
     public string LancerAppel(Peer p, string typeAppel)
     {
@@ -343,6 +351,11 @@ public class ChatService
     {
         Appels.Insert(0, info);
         ListeChangee?.Invoke();
+    }
+
+    public void SupprimerAppel(AppelInfo info)
+    {
+        if (Appels.Remove(info)) ListeChangee?.Invoke();
     }
 
     // ---------- Réception des paquets ----------
@@ -486,6 +499,12 @@ public class ChatService
                     };
                     Statuts.Insert(0, s);
                     Notification?.Invoke($"Nouveau statut de {pk.De}");
+                    break;
+                }
+            case "story_delete":
+                {
+                    var existant = Statuts.FirstOrDefault(x => x.Id == pk.Id);
+                    if (existant != null) Statuts.Remove(existant);
                     break;
                 }
             case "call_offer":

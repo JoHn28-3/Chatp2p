@@ -235,6 +235,7 @@ public class AppelWindow : Window
 
     void DemarrerConversation()
     {
+        if (_actif || _termine) return;
         _actif = true;
         _sonnerie.Stop();
         _pnlEntrant.Visibility = Visibility.Collapsed;
@@ -243,8 +244,18 @@ public class AppelWindow : Window
         _chrono.Start();
     }
 
+    public void FermerSilencieusement()
+    {
+        if (_termine) return;
+        _termine = true;
+        _chrono.Stop();
+        _sonnerie.Stop();
+        Close();
+    }
+
     public void SurReponseDistante(bool accepte)
     {
+        if (_termine) return;
         if (accepte) DemarrerConversation();
         else
         {
@@ -256,6 +267,7 @@ public class AppelWindow : Window
 
     public void SurFinDistante()
     {
+        if (_termine) return;
         _lblStatut.Text = "Appel terminé";
         _chrono.Stop();
         _sonnerie.Stop();

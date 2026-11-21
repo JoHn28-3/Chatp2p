@@ -418,6 +418,18 @@ public partial class MainWindow : Window
         if (lstStatuts.SelectedItem is StatutStory st) AfficherStatut(st);
     }
 
+    void MenuVoirStatut_Click(object s, RoutedEventArgs e)
+    {
+        if ((s as FrameworkElement)?.DataContext is StatutStory st) AfficherStatut(st);
+    }
+
+    async void BtnSupprimerStatut_Click(object s, RoutedEventArgs e)
+    {
+        if ((s as FrameworkElement)?.DataContext is not StatutStory st) return;
+        if (MessageBox.Show("Supprimer ce statut ?", "Supprimer le statut", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            await chat.SupprimerStatutAsync(st);
+    }
+
     void AfficherStatut(StatutStory st)
     {
         var contenu = new Grid
@@ -446,7 +458,26 @@ public partial class MainWindow : Window
                 Child = new TextBlock { Text = st.Texte, FontSize = 20, Foreground = Brushes.White, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center }
             });
         }
-        Fenetre($"Statut de {st.Auteur}", 436, contenu).ShowDialog();
+        var fen = Fenetre($"Statut de {st.Auteur}", 436, contenu);
+        var btnSuppr = new Button
+        {
+            Content = "🗑 Supprimer",
+            Background = new SolidColorBrush(Color.FromArgb(170, 229, 57, 53)),
+            Foreground = Brushes.White,
+            BorderThickness = new Thickness(0),
+            Padding = new Thickness(10, 5, 10, 5),
+            Cursor = Cursors.Hand,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(14)
+        };
+        btnSuppr.Click += async (_, _) =>
+        {
+            await chat.SupprimerStatutAsync(st);
+            fen.Close();
+        };
+        contenu.Children.Add(btnSuppr);
+        fen.ShowDialog();
     }
 
     // ---------- Appels Audio / Vidéo ----------
@@ -461,6 +492,12 @@ public partial class MainWindow : Window
         else MessageBox.Show($"{info.Nom} n'est pas connecté actuellement.");
     }
 
+    void BtnSupprimerAppel_Click(object s, RoutedEventArgs e)
+    {
+        if ((s as FrameworkElement)?.DataContext is AppelInfo info)
+            chat.SupprimerAppel(info);
+    }
+
     void LancerAppel(string typeAppel)
     {
         if (!ChatService.PeutEnvoyer(selection, out var err)) { MessageBox.Show(err); return; }
@@ -473,7 +510,7 @@ public partial class MainWindow : Window
 
     void SurAppelEntrant(Peer p, string callId, string typeAppel)
     {
-        appelOuvert?.Close();
+        appelOuvert?.FermerSilencieusement();
         appelOuvert = new AppelWindow(this, p, chat, callId, typeAppel, true);
         appelOuvert.Closed += (_, _) => appelOuvert = null;
         appelOuvert.Show();
